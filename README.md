@@ -36,6 +36,7 @@ pip install "jax[cuda12_pip]" \
     -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 I also need to install the weights of the AlphaFold2 neural network.
-```bash
-python -m colabfold.download --data /data/alexis/colabfold_params
+```python
+#python
+python -c "from colabfold.download import download_alphafold_params; download_alphafold_params('/data/alexis/colabfold_params')"
 ```
