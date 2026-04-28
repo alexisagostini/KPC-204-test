@@ -80,3 +80,9 @@ same for the KPC-2alphafold
 ```bash
 wget -O KPC-2.fasta "https://rest.uniprot.org/uniprotkb/Q9F663.fasta"
 ```
+I have on my repository
+KPCpdb
+|--KCP-2AlphaFold.pdb
+|--KCP-2cristalo.pdb
+|--KCP-204swissmodel.pdb
+|--KPC204alphafold.pdb
