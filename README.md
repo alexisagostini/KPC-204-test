@@ -8,5 +8,15 @@ mv 2OV5.pb KPC-2cristalo
 ```
 ## Make a KPC-204 .pdb from swiss model.
 I don't have cristallography for the KPC-204, i will try to manage with swissmodel in order to have a folding based on the KPC-2 folding and the 3 amino acide include in the KPC-204.
+I primarly need a fasta of the protein KPC-204
+```bash
+wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
+```
+On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
+rename to KCP-204swissmodel.pdb
 
-On the swiss model 
+## Alpha fold
+in order to verifie if swiss model made a good folding, I will fold both protein from the scratch.
+if the folding of KPC-2 is similare to the cristallography the folding by alphafold will be a good model for KPC-204 otherwise using swissmodel could be the best way.
+
+### downloading micromamaba
