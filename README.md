@@ -40,3 +40,14 @@ I also need to install the weights of the AlphaFold2 neural network.
 #python
 python -c "from colabfold.download import download_alphafold_params; download_alphafold_params('/data/alexis/colabfold_params')"
 ```
+### launch the prediction 
+```bash 
+colabfold_batch \
+    /data/alexis/project/KPC204.fasta \
+    /data/alexis/project/KPC204/output \
+    --data /data/alexis/colabfold_params \
+    --num-recycle 3 \
+    --model-type alphafold2_ptm \
+    --templates \
+    --amber
+    ```
