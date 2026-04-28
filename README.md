@@ -77,3 +77,6 @@ cp /data/alexis/project/KPC204/output/WXU16489.1_inhibitor-resistant_carbapenem-
    /data/alexis/project/KPC204/KCPpdb/KPC204alphafold.pdb
 ```
 same for the KPC-2alphafold
+```bash
+wget -O KPC-2.fasta "https://rest.uniprot.org/uniprotkb/Q9F663.fasta"
+```
