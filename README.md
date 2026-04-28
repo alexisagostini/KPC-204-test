@@ -28,7 +28,8 @@ micromamba activate colabfold
 and download some tools usefull
 ```bash 
 micromamba install -c bioconda hhsuite -y
-
+pip install pdbfixer
+```
 ### Downloading ColabFold
 AlphaFold is thinked for thousand protein and the programme is really heavy and complex, ColabFold is lighter and faster especially if we work on little known protein like i do
 ```bash
@@ -45,6 +46,17 @@ python -c "from colabfold.download import download_alphafold_params; download_al
 ```
 ### launch the prediction 
 ```bash 
+cat > /data/alexis/project/run_colabfold.sh << 'EOF'
+#!/bin/bash
+#SBATCH --job-name=colabfold_KPC204
+#SBATCH --output=/data/alexis/project/KPC204/logs/colabfold_%j.log
+#SBATCH --error=/data/alexis/project/KPC204/logs/colabfold_%j.err
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:1
+
+eval "$(micromamba shell hook --shell bash)"
+micromamba activate /data/alexis/envs/colabfold
+
 colabfold_batch \
     /data/alexis/project/KPC204.fasta \
     /data/alexis/project/KPC204/output \
@@ -53,5 +65,15 @@ colabfold_batch \
     --model-type alphafold2_ptm \
     --templates \
     --amber
+EOF
+
+sbatch /data/alexis/project/run_colabfold.sh
 ```
-here JAX , on of the tools include on the ColabFold package will look is some GPU are available to do the construction, if there is no GPU like my case it will be able to turn it on CPU but it's longer  
+JAX could not detect GPU if is version is too old, feel free to update it
+
+Copy the file and move it with an easier name
+```bash 
+cp /data/alexis/project/KPC204/output/WXU16489.1_inhibitor-resistant_carbapenem-hydrolyzing_class_A_beta-lactamase_KPC-204__plasmid___Klebsiella_pneumoniae__relaxed_rank_001_alphafold2_ptm_model_4_seed_000.pdb \
+   /data/alexis/project/KPC204/KCPpdb/KPC204alphafold.pdb
+```
+same for the KPC-2alphafold
