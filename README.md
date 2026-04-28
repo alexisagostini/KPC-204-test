@@ -25,6 +25,9 @@ This micro-environment is a good way to download alpha fold
 micromamba create -n colabfold python=3.10 -c conda-forge -y
 micromamba activate colabfold
 ```
+and download some tools usefull
+```bash 
+micromamba install -c bioconda hhsuite -y
 
 ### Downloading ColabFold
 AlphaFold is thinked for thousand protein and the programme is really heavy and complex, ColabFold is lighter and faster especially if we work on little known protein like i do
@@ -51,3 +54,4 @@ colabfold_batch \
     --templates \
     --amber
     ```
+here JAX , on of the tools include on the ColabFold package will look is some GPU are available to do the construction, if there is no GPU like my case it will be able to turn it on CPU but it's longer  
