@@ -22,3 +22,10 @@ if the folding of KPC-2 is similare to the cristallography the folding by alphaf
 ### downloading micromamba
 This micro-environment is a good way to download alpha fold 
 ```bash 
+micromamba create -n colabfold python=3.10 -c conda-forge -y
+micromamba activate colabfold
+```
+
+### Downloading ColabFold
+AlphaFold is thinked for thousand protein and the programme is really heavy and complex, ColabFold is lighter and faster especially if we work on little known protein like i do
+```bash
