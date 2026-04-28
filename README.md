@@ -19,4 +19,6 @@ rename to KCP-204swissmodel.pdb
 in order to verifie if swiss model made a good folding, I will fold both protein from the scratch.
 if the folding of KPC-2 is similare to the cristallography the folding by alphafold will be a good model for KPC-204 otherwise using swissmodel could be the best way.
 
-### downloading micromamaba
+### downloading micromamba
+This micro-environment is a good way to download alpha fold 
+```bash 
