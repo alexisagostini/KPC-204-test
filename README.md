@@ -29,3 +29,13 @@ micromamba activate colabfold
 ### Downloading ColabFold
 AlphaFold is thinked for thousand protein and the programme is really heavy and complex, ColabFold is lighter and faster especially if we work on little known protein like i do
 ```bash
+pip install \
+    "colabfold[alphafold-minus-jax] @ git+https://github.com/sokrypton/ColabFold"
+
+pip install "jax[cuda12_pip]" \
+    -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+```
+I also need to install the weights of the AlphaFold2 neural network.
+```bash
+python -m colabfold.download --data /data/alexis/colabfold_params
+```
