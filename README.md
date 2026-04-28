@@ -53,5 +53,5 @@ colabfold_batch \
     --model-type alphafold2_ptm \
     --templates \
     --amber
-    ```
+```
 here JAX , on of the tools include on the ColabFold package will look is some GPU are available to do the construction, if there is no GPU like my case it will be able to turn it on CPU but it's longer  
