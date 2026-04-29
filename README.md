@@ -109,5 +109,9 @@ I have several parameters and I accept a mean deviation of 2 amstrong (RMSD=2) e
 All protein seems to have really well folded i just decide to exlude KPC-2cristalo.pdb because I have a similar one but cleanner
 
 I can start to modelise with GROMAC
+from my .pbd files I will produce a file of coordinate ready for GROMACS
 
+gmx pdb2gmx -f Protein.pdb -o Protein_processed.gro \
+-water tip3p -ff amber99sb-ildn
+pdb2gmx is a tool from GROMACS that will read the file.pdb add hydrogenes if there are missing, generate the topology (angles, bind, charges) and a forcefield for configure each atomes, creat a file.gro
 
