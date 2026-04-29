@@ -110,8 +110,23 @@ All protein seems to have really well folded i just decide to exlude KPC-2crista
 
 I can start to modelise with GROMAC
 from my .pbd files I will produce a file of coordinate ready for GROMACS
-
+```bash
 gmx pdb2gmx -f Protein.pdb -o Protein_processed.gro \
 -water tip3p -ff amber99sb-ildn
+```
 pdb2gmx is a tool from GROMACS that will read the file.pdb add hydrogenes if there are missing, generate the topology (angles, bind, charges) and a forcefield for configure each atomes, creat a file.gro
 
+/!\ my cristalo folding has 2 problems : 
+- there is 3 copies of the protein
+- there is the ligan inside
+
+I can remove easilly the ligan with grep
+```bash
+grep -v "BCN" /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_clean.pdb  > /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_noligand.pdb
+```
+and I probably keep only one copy (there are completly indentical each other)
+
+```bash
+grep -E "^(ATOM|TER)" /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_noligand.pdb | awk '$5 == "A"'  > /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_chainA_only.pdb
+```
+Next i do the pdb2gmx tool again with the KPC-2cristalo_chainA_only.pdb
