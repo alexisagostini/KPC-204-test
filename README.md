@@ -164,5 +164,8 @@ sed -i '2s/.*/  4470/' /data/alexis/project/KPC_complex/KPC-204alphafold_complex
 # KPC-204 swissmodel : 4046 + 44 = 4090
 sed -i '2s/.*/  4090/' /data/alexis/project/KPC_complex/KPC-204swissmodel_complex.gro
 ```
-Good but it still having a problem here GROMACS looks only the last line and that is the line of the ligan not the both
+Good but it still having a problem here GROMACS looks only the last line and that is the line of the ligan not the protein one
+
+Just need to copy the last line of the proteine coordinate and past it instead of the avibactam one
+
 
