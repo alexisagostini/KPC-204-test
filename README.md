@@ -136,6 +136,7 @@ I need to introduce the avibactam for the simulation but GROMACS is adapted to p
 ```bash
 micromamba install -c conda-forge acpype -y
 wget "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/25151352/record/SDF/?record_type=3d&response_type=save&response_basename=avibactam" -O avibactam.sdf
-acpype -i avibactam.sdf -c bcc -n -1
+acpype -i avibactam.sdf -c bcc -n 0
 # ->avibactam_GMX.itp and avibactam_GMX.gro
 ```
+-n0 because the active forme of avibactame is a sulfate zwitterionique, the charge is 0
