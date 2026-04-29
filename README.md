@@ -108,5 +108,6 @@ I have several parameters and I accept a mean deviation of 2 amstrong (RMSD=2) e
 
 All protein seems to have really well folded i just decide to exlude KPC-2cristalo.pdb because I have a similar one but cleanner
 
+I can start to modelise with GROMAC
 
 
