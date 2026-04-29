@@ -143,5 +143,26 @@ exit files avibactam_GMX.itp and avibactam_GMX.gro that will interest me
 
 I need to group them together to make it works for GROMACS
 ```bash
-cat KPCprocessed.gro avibactam_GMX.gro > KPC.gro
+cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KCP-2cristallography_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-2cristallography_complex.gro
+cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KCP-204swissmodel_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-204swissmodel_complex.gro
+cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KCP-204alphafold_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-204alphafold_complex.gro
+cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KPC2alphafold_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-2alphafold_complex.gro
 ```
+Here I have a file with both avibactam and KPC protein for each condition.
+the problem is that cat kept the nomber of atomes from the protein and did not includ atomes from the avibactam (44)
+I have to correct it proprely 
+```bash 
+# KPC-2 crystallography :3880 +44 = 3924
+sed -i '2s/.*/  3924/' /data/alexis/project/KPC_complex/KPC-2cristallography_complex.gro
+
+# KPC-2 alphafold : 4380 + 44 = 4424
+sed -i '2s/.*/  4424/' /data/alexis/project/KPC_complex/KPC-2alphafold_complex.gro
+
+# KPC-204 alphafold : 4426 + 44 = 4470
+sed -i '2s/.*/  4470/' /data/alexis/project/KPC_complex/KPC-204alphafold_complex.gro
+
+# KPC-204 swissmodel : 4046 + 44 = 4090
+sed -i '2s/.*/  4090/' /data/alexis/project/KPC_complex/KPC-204swissmodel_complex.gro
+```
+Good but it still having a problem here GROMACS looks only the last line and that is the line of the ligan not the both
+
