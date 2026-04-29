@@ -88,3 +88,24 @@ KPCpdb
 |--KCP-204swissmodel.pdb
 |--KPC204alphafold.pdb
 ```
+I need a comparaison point to validate my KCP proteines's fold to compare i need the tools tmalign
+```bash
+conda install -c bioconda tmalign
+```
+In order to compare the structure of protein i use that code 
+```bash
+TMalign Prot1.pdb Prot2.pdb
+```
+I have several parameters and I accept a mean deviation of 2 amstrong (RMSD=2) equivalent at a covalent bind and a normality score of 0,70(TMscore=0,70) (Yang Zhang and Jeffrey Skolnick 2004 found that 0,47 was a good score) and an identity of sequence of 0,9 id_seq= 0,9
+|---|---|---|---|---|---|
+|Protein 1|Protein 2| TM score | RMSD | seq_ID |word|
+|KPC-2cristalo_clean.pdb|KCP-2cristalo.pdb|1.000|0.000|1.000|Identical|
+|KPC-2cristalo_clean.pdb|KCP-2alphafold.pdb|0.88681|0.42|1.000|really similare protein from alphafold seems to be a good model|
+|KPC-204swissmodel.pdb|KCP-204alphafold.pdb|0.89864|1.21|0,978|swiss model looks loke a good model but different from alpha fold|
+|KCP-2alphafold.pdb|KCP-204alphafold.pdb|0.94515|1.14|0.993|The comparaison between both alphafold protein looks good the difference probably comes from the 3 amino acide|
+|KCP-2alphafold.pdb|KCP-204swissmodel.pdb|0.90273|1.10|0.974|The comparaison between both  protein looks good the difference probably comes from the 3 amino acide|
+
+All protein seems to have really well folded i just decide to exlude KPC-2cristalo.pdb because I have a similar one but cleanner
+
+
+
