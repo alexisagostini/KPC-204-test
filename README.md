@@ -130,3 +130,12 @@ and I probably keep only one copy (there are completly indentical each other)
 grep -E "^(ATOM|TER)" /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_noligand.pdb | awk '$5 == "A"'  > /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_chainA_only.pdb
 ```
 Next i do the pdb2gmx tool again with the KPC-2cristalo_chainA_only.pdb
+
+I need to introduce the avibactam for the simulation but GROMACS is adapted to protein but not on avibactam, ACPYPE is a molecular tool that translate a molecule to a language that GROMACS understand
+
+```bash
+micromamba install -c conda-forge acpype -y
+wget "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/25151352/record/SDF/?record_type=3d&response_type=save&response_basename=avibactam" -O avibactam.sdf
+acpype -i avibactam.sdf -c bcc -n -1
+# ->avibactam_GMX.itp and avibactam_GMX.gro
+```
