@@ -206,4 +206,16 @@ I notice only one problem that is present from the beggining, the KPC-204alphafo
 
 when I'm looking on the RMSD the higher values are always when KPC-204alphafolds is present, it results will be really criticable at the end
 
-the problem is that the box will be too big and the time of calculation will be too long, a solution is to use other forme than cube like a dodecahedric box that will reduice the amounng of liquide and will make the calcule faster
+and because the cube is larger for this proteine the time of calculation will be longer
+now I will add the information from the .its files into the .top files
+```bash
+cd /data/alexis/project/grmcomplex
+
+cp /data/alexis/avibactam.acpype/avibactam_GMX.itp .
+cp /data/alexis/avibactam.acpype/posre_avibactam.itp .
+
+for BASE in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
+    sed -i "/^\[ system \]/i ; Ligand topology\n#include \"avibactam_GMX.itp\"\n" ${BASE}.top
+    echo "avibactam              1" >> ${BASE}.top
+done
+```
