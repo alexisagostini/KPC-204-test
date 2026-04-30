@@ -10,7 +10,7 @@ mv 2OV5.pb KPC-2cristalo
 I don't have cristallography for the KPC-204, i will try to manage with swissmodel in order to have a folding based on the KPC-2 folding and the 3 amino acide include in the KPC-204.
 I primarly need a fasta of the protein KPC-204
 ```bash
-wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
+wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=proteiaan&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
 ```
 On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
 rename to KCP-204swissmodel.pdb
@@ -83,12 +83,12 @@ wget -O KPC-2.fasta "https://rest.uniprot.org/uniprotkb/Q9F663.fasta"
 I have on my repository
 ```
 KPCpdb
-|--KCP-2AlphaFold.pdb
-|--KCP-2cristalo.pdb
-|--KCP-204swissmodel.pdb
-|--KPC204alphafold.pdb
+|--KPC-2AlphaFold.pdb
+|--KPC-2cristalo.pdb
+|--KPC-204swissmodel.pdb
+|--KPC-204alphafold.pdb
 ```
-I need a comparaison point to validate my KCP proteines's fold to compare i need the tools tmalign
+I need a comparaison point to validate my KPC proteines's fold to compare i need the tools tmalign
 ```bash
 conda install -c bioconda tmalign
 ```
@@ -168,4 +168,38 @@ Good but it still having a problem here GROMACS looks only the last line and tha
 
 Just need to copy the last line of the proteine coordinate and past it instead of the avibactam one
 
+And because of the cat in putting informations in block I also have 2 line more that I have to remove 
+- the informations of the avibactam
+- the number of atomes of the avibactamt
 
+  there is a way to identifie them
+  ```bash
+  for f in *.gro; do
+    echo "=== $f ==="
+    grep -n "acpype\|avibactam\| 44$\| 44 $" "$f"
+    echo ""
+done
+```
+
+for each .gro that will give you the line of the information of avibactam and the line where there is the number of atomes of avibactam
+we can remove it manualy or in case that there is a too much number of files just with this commande
+
+```bash
+for f in *.gro; do
+    sed -i '/avibactam_GMX.gro created by acpype/d; /^ 44$/d' "$f"
+done
+```
+and the final line to remove is the box vector between the proteine and the avibactam because the cat past in block the proteine.gro again 
+i removed it manualy
+
+Ok now I decide to creat the box
+in this box we will add 1nm of marge for each side of the proteine to avoid that the proteine interact with itself
+there is no wall on the box that means that if the proteine touch the boder a part of it will path to the other side and risque to disturb it.
+
+```bash
+gmx editconf -f "$f" \
+             -o "${BASE}_box.gro" \
+             -c -d 1.0 -bt cubic
+```
+
+I notice only one problem that is present from the beggining, the KPC-204alphafold proteine has a XYZ coordinate really elongate on the z axis, that a factor to take and it's means that the folding is probably not optimal.
