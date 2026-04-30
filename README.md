@@ -206,3 +206,4 @@ I notice only one problem that is present from the beggining, the KPC-204alphafo
 
 when I'm looking on the RMSD the higher values are always when KPC-204alphafolds is present, it results will be really criticable at the end
 
+the problem is that the box will be too big and the time of calculation will be too long, a solution is to use other forme than cube like a dodecahedric box that will reduice the amounng of liquide and will make the calcule faster
