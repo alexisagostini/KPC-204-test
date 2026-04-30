@@ -203,3 +203,6 @@ gmx editconf -f "$f" \
 ```
 
 I notice only one problem that is present from the beggining, the KPC-204alphafold proteine has a XYZ coordinate really elongate on the z axis, that a factor to take and it's means that the folding is probably not optimal.
+
+when I'm looking on the RMSD the higher values are always when KPC-204alphafolds is present, it results will be really criticable at the end
+
