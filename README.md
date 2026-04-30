@@ -219,3 +219,37 @@ for BASE in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmod
     echo "avibactam              1" >> ${BASE}.top
 done
 ```
+/!\ problem identified
+the global charge that my proteines have are different, I did research and there in a post traductional modification on that proteine, the signalpetide is remove, on KPC-2 at the ALA30 and for the KPC-240 at the leucine 25
+I have to cut that part on my pdb to make it closer than the original one
+```bash
+cd /data/alexis/project/KPC204/KCPpdb/
+
+awk '$1=="ATOM" && $6>=30' KCP-2alphaforld.pdb > KCP-2alphafold_mature.pdb
+echo "TER" >> KCP-2alphafold_mature.pdb
+
+awk '$1=="ATOM" && $6>=25' KCP-204alphafold.pdb > KCP-204alphafold_mature.pdb
+echo "TER" >> KCP-204alphafold_mature.pdb
+```
+I will remake mu gmx to have a good .top files
+```bash
+
+gmx pdb2gmx \
+    -f /data/alexis/project/KPC204/KCPpdb/KCP-2alphafold_mature.pdb \
+    -o KPC-2alphafold_protein.gro \
+    -p KPC-2alphafold.top \
+    -i KPC-2alphafold_posre.itp \
+    -ff amber99sb-ildn \
+    -water tip3p \
+    -ignh
+
+gmx pdb2gmx \
+    -f /data/alexis/project/KPC204/KCPpdb/KCP-204alphafold_mature.pdb \
+    -o KPC-204alphafold_protein.gro \
+    -p KPC-204alphafold.top \
+    -i KPC-204alphafold_posre.itp \
+    -ff amber99sb-ildn \
+    -water tip3p \
+    -ignh
+```
+
