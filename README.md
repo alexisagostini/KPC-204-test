@@ -252,4 +252,159 @@ gmx pdb2gmx \
     -water tip3p \
     -ignh
 ```
-Ok now i will solvate al
+Ok now i will solvate all proteins
+```bash
+for P in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
+    echo "=== Solvation $P ==="
+    gmx solvate -cp ${P}_complex.gro \
+                -cs spc216.gro \
+                -o ${P}_solv.gro \
+                -p /data/alexis/project/grmcomplex/${P}.top
+    echo ""
+done
+```
+and neutralise with ions. 
+I start to creat a IONS file (ions.mdp) with nano 
+
+```bash
+nano ions.mdp
+```
+And i put this on the file
+```markdown
+integrator  = steep
+nsteps      = 0
+emtol       = 1000.0
+emstep      = 0.01
+nstlist     = 1
+cutoff-scheme = Verlet
+ns_type     = grid
+coulombtype = cutoff
+rcoulomb    = 1.0
+rvdw        = 1.0
+pbc         = xyz
+```
+now i have to replace all the water molecule by ions 
+Echo13 will automaticaly selection the option sol to doing this 
+
+```bash
+for P in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
+    gmx grompp -f ions.mdp -c ${P}_solv.gro -p /data/alexis/project/grmcomplex/${P}.top -o ${P}_ions.tpr -maxwarn 2
+    echo 13 | gmx genion -s ${P}_ions.tpr -o ${P}_ion.gro -p /data/alexis/project/grmcomplex/${P}.top -pname NA -nname CL -neutral
+done
+```
+I minimise the energie of the system 
+```bash
+nano
+```
+with a file me.mdp (minimisation energie)
+```markdown
+integrator      = steep
+emtol           = 1000.0
+emstep          = 0.01
+nsteps          = 50000
+
+nstlist         = 1
+cutoff-scheme   = Verlet
+ns_type         = grid
+coulombtype     = PME
+rcoulomb        = 1.0
+rvdw            = 1.0
+pbc             = xyz
+```
+and i start the program:
+```bash
+for SYS in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
+    gmx grompp -f em.mdp -c ${SYS}_ion.gro \
+        -p /data/alexis/project/grmcomplex/${SYS}.top \
+        -o ${SYS}_em.tpr -maxwarn 2
+    gmx mdrun -v -deffnm ${SYS}_em -ntmpi 1 -ntomp 4
+done
+```
+I also add a nvt and npt (atomes volume/pression temperature)
+```bash
+nano npt.mdp
+nano nvt.mdp
+```
+for the nvt
+```markdown
+integrator      = md
+nsteps          = 50000        ; 100 ps
+dt              = 0.002
+nstxout         = 500
+nstvout         = 500
+nstenergy       = 500
+nstlog          = 500
+continuation    = no
+constraint_algorithm = lincs
+constraints     = h-bonds
+lincs_iter      = 1
+lincs_order     = 4
+cutoff-scheme   = Verlet
+ns_type         = grid
+nstlist         = 10
+rcoulomb        = 1.0
+rvdw            = 1.0
+coulombtype     = PME
+pme_order       = 4
+fourierspacing  = 0.16
+tcoupl          = V-rescale
+tc-grps         = Protein Non-Protein
+tau_t           = 0.1   0.1
+ref_t           = 300   300
+pcoupl          = no
+pbc             = xyz
+gen_vel         = yes
+gen_temp        = 300
+gen_seed        = -1
+```
+for the npt 
+```
+integrator      = md
+nsteps          = 50000
+dt              = 0.002
+nstxout         = 500
+nstvout         = 500
+nstenergy       = 500
+nstlog          = 500
+continuation    = yes
+constraint_algorithm = lincs
+constraints     = h-bonds
+lincs_iter      = 1
+lincs_order     = 4
+cutoff-scheme   = Verlet
+ns_type         = grid
+nstlist         = 10
+rcoulomb        = 1.0
+rvdw            = 1.0
+coulombtype     = PME
+pme_order       = 4
+fourierspacing  = 0.16
+tcoupl          = V-rescale
+tc-grps         = Protein Non-Protein
+tau_t           = 0.1 0.1
+ref_t           = 300 300
+pcoupl          = Parrinello-Rahman
+pcoupltype      = isotropic
+tau_p           = 2.0
+ref_p           = 1.0
+compressibility = 4.5e-5
+refcoord_scaling = com
+pbc             = xyz
+DispCorr        = EnerPres
+gen_vel         = no
+```
+
+and add the parametter one by one 
+
+NVT
+```bash
+for SYS in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
+    gmx grompp -f nvt.mdp -c ${SYS}_em.gro \
+        -r ${SYS}_em.gro \
+        -p /data/alexis/project/grmcomplex/${SYS}.top \
+        -o ${SYS}_nvt.tpr -maxwarn 2
+    gmx mdrun -v -deffnm ${SYS}_nvt -ntmpi 1 -ntomp 4
+done
+```
+NPT
+```bash
