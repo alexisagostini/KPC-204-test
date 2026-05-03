@@ -252,4 +252,4 @@ gmx pdb2gmx \
     -water tip3p \
     -ignh
 ```
-
+Ok now i will solvate al
