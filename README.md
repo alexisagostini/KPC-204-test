@@ -407,4 +407,68 @@ for SYS in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmode
 done
 ```
 NPT
+that time i will do it in parallele in the GPU that will be faster 
+I just need to install gromacs that allow to pass by GPU
 ```bash
+conda create -n gmx_gpu -c conda-forge gromacs=2025.4=nompi_cuda_h39c90b0_0 -y
+```
+
+```bash
+conda activate gmx_gpu
+SYSTEMS=("KPC-2cristallography" "KPC-2alphafold" "KPC-204alphafold" "KPC-204swissmodel")
+
+for i in 0 1 2 3; do
+    SYS=${SYSTEMS[$i]}
+    gmx grompp -f npt.mdp -c ${SYS}_nvt.gro -r ${SYS}_nvt.gro \
+        -t ${SYS}_nvt.cpt -p ${SYS}.top -o ${SYS}_npt.tpr -maxwarn 2
+    gmx mdrun -v -deffnm ${SYS}_npt -ntmpi 1 -ntomp 4 -gpu_id $i -nb gpu -pme gpu &
+done
+wait
+```
+Modelisation
+```bash
+nano md.mdp
+```
+```markdown
+integrator      = md
+nsteps          = 50000000
+dt              = 0.002
+nstxout-compressed = 5000
+nstvout         = 0
+nstenergy       = 5000
+nstlog          = 5000
+continuation    = yes
+constraint_algorithm = lincs
+constraints     = h-bonds
+lincs_iter      = 1
+lincs_order     = 4
+cutoff-scheme   = Verlet
+nstlist         = 10
+rcoulomb        = 1.0
+rvdw            = 1.0
+coulombtype     = PME
+pme_order       = 4
+fourierspacing  = 0.16
+tcoupl          = V-rescale
+tc-grps         = Protein Non-Protein
+tau_t           = 0.1 0.1
+ref_t           = 300 300
+pcoupl          = Parrinello-Rahman
+pcoupltype      = isotropic
+tau_p           = 2.0
+ref_p           = 1.0
+compressibility = 4.5e-5
+pbc             = xyz
+DispCorr        = EnerPres
+gen_vel         = no
+```
+execution
+```bash
+for i in 0 1 2 3; do
+    SYS=${SYSTEMS[$i]}
+    gmx grompp -f md.mdp -c ${SYS}_npt.gro -t ${SYS}_npt.cpt \
+        -p ${TOPDIR}/${SYS}.top -o ${SYS}_md.tpr -maxwarn 2 && \
+    gmx mdrun -deffnm ${SYS}_md -ntmpi 1 -ntomp 4 -gpu_id $i -nb gpu -pme gpu &
+done
+wait
+```
