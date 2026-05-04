@@ -39,6 +39,7 @@ pip install \
 pip install "jax[cuda12_pip]" \
     -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
+JAX could not detect GPU if is version is too old, feel free to update it
 I also need to install the weights of the AlphaFold2 neural network.
 ```python
 #python
@@ -62,7 +63,6 @@ colabfold_batch \
     --templates \
     --amber
 ```
-JAX could not detect GPU if is version is too old, feel free to update it
 
 Copy the file and move it with an easier name
 ```bash 
@@ -73,58 +73,69 @@ same for the KPC-2alphafold
 ```bash
 wget -O KPC-2.fasta "https://rest.uniprot.org/uniprotkb/Q9F663.fasta"
 ```
-I have on my repository
-```
-KPCpdb
-|--KPC-2AlphaFold.pdb
-|--KPC-2cristalo.pdb
-|--KPC-204swissmodel.pdb
-|--KPC-204alphafold.pdb
-```
-I need a comparaison point to validate my KPC proteines's fold to compare i need the tools tmalign
+I need a comparaison point to validate my KPC proteines's fold to compare, tmalign is a good tool to compare each other
 ```bash
 conda install -c bioconda tmalign
 ```
+my alphafolded proteins have a signal peptide to remove in order to be closer than the reality
+```bash
+awk '$1=="ATOM" && $6>=30' KCP-2alphaforld.pdb > KCP-2alphafold_mature.pdb
+echo "TER" >> KCP-2alphafold_mature.pdb
+
+awk '$1=="ATOM" && $6>=25' KCP-204alphafold.pdb > KCP-204alphafold_mature.pdb
+echo "TER" >> KCP-204alphafold_mature.pdb
+```
 In order to compare the structure of protein i use that code 
 ```bash
+#Use your own name
 TMalign Prot1.pdb Prot2.pdb
 ```
-I have several parameters and I accept a mean deviation of 2 amstrong (RMSD=2) equivalent at a covalent bind and a normality score of 0,70(TMscore=0,70) (Yang Zhang and Jeffrey Skolnick 2004 found that 0,47 was a good score) and an identity of sequence of 0,9 id_seq= 0,9
+I have several parameters, I accept a mean deviation of 2 amstrong (RMSD=2) equivalent at a covalent bind and a normality score of 0,70(TMscore=0,70) (Yang Zhang and Jeffrey Skolnick 2004 found that 0,47 was a good score) and an identity of sequence of 0,9 id_seq= 0,9
+
+my alphafolded proteins have a signal peptide to remove in order to be closer than the reality
 
 |Protein 1|Protein 2| TM score | RMSD | seq_ID |word|
 |---|---|---|---|---|---|
 |KPC-2cristalo_clean.pdb|KCP-2cristalo.pdb|1.000|0.000|1.000|Identical|
-|KPC-2cristalo_clean.pdb|KCP-2alphafold.pdb|0.88681|0.42|1.000|really similare protein from alphafold seems to be a good model|
-|KPC-204swissmodel.pdb|KCP-204alphafold.pdb|0.89864|1.21|0,978|swiss model looks loke a good model but different from alpha fold|
-|KCP-2alphafold.pdb|KCP-204alphafold.pdb|0.94515|1.14|0.993|The comparaison between both alphafold protein looks good the difference probably comes from the 3 amino acide|
-|KCP-2alphafold.pdb|KCP-204swissmodel.pdb|0.90273|1.10|0.974|The comparaison between both  protein looks good the difference probably comes from the 3 amino acide|
+|KPC-2cristalo_clean.pdb|KCP-2alphafold_mature.pdb|0.88681|0.42|1.000|really similare protein from alphafold seems to be a good model|
+|KPC-204swissmodel.pdb|KCP-204alphafold_mature.pdb|0.89864|1.21|0,978|swiss model looks loke a good model but different from alpha fold|
+|KCP-2alphafold_mature.pdb|KCP-204alphafold_mature.pdb|0.94515|1.14|0.993|The comparaison between both alphafold protein looks good the difference probably comes from the 3 amino acide|
+|KCP-2alphafold_mature.pdb|KCP-204swissmodel.pdb|0.90273|1.10|0.974|The comparaison between both  protein looks good the difference probably comes from the 3 amino acide|
 
 All protein seems to have really well folded i just decide to exlude KPC-2cristalo.pdb because I have a similar one but cleanner
 
-I can start to modelise with GROMAC
+## GROMACS
+
+### GROMACS pre-riquire
+
 from my .pbd files I will produce a file of coordinate ready for GROMACS
+
 ```bash
 gmx pdb2gmx -f Protein.pdb -o Protein_processed.gro \
 -water tip3p -ff amber99sb-ildn
 ```
+
 pdb2gmx is a tool from GROMACS that will read the file.pdb add hydrogenes if there are missing, generate the topology (angles, bind, charges) and a forcefield for configure each atomes, creat a file.gro
 
 /!\ my cristalo folding has 2 problems : 
 - there is 3 copies of the protein
 - there is the ligan inside
 
+### ligan clean
+
 I can remove easilly the ligan with grep
 ```bash
-grep -v "BCN" /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_clean.pdb  > /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_noligand.pdb
+grep -v "BCN" KPC-2cristalo_clean.pdb  > KPC-2cristalo_noligand.pdb
 ```
 and I probably keep only one copy (there are completly indentical each other)
 
 ```bash
-grep -E "^(ATOM|TER)" /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_noligand.pdb | awk '$5 == "A"'  > /data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_chainA_only.pdb
+grep -E "^(ATOM|TER)" KPC-2cristalo_noligand.pdb | awk '$5 == "A"'  > KPC-2cristalo_chainA_only.pdb
 ```
 Next i do the pdb2gmx tool again with the KPC-2cristalo_chainA_only.pdb
 
 I need to introduce the avibactam for the simulation but GROMACS is adapted to protein but not on avibactam, ACPYPE is a molecular tool that translate a molecule to a language that GROMACS understand
+### introduction of avibactam
 
 ```bash
 micromamba install -c conda-forge acpype -y
@@ -134,28 +145,30 @@ acpype -i avibactam.sdf -c bcc -n 0
 -n0 because the active forme of avibactame is a sulfate zwitterionique, the charge is 0
 exit files avibactam_GMX.itp and avibactam_GMX.gro that will interest me 
 
-I need to group them together to make it works for GROMACS
+### group proteine and avibactam
+
+I need to group poteines and avibactam together to make it works for GROMACS
 ```bash
-cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KCP-2cristallography_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-2cristallography_complex.gro
-cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KCP-204swissmodel_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-204swissmodel_complex.gro
-cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KCP-204alphafold_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-204alphafold_complex.gro
-cat /data/alexis/project/KPC204/KCPpdb/KPCpdb_processed/KPC2alphafold_processed.gro /data/alexis/avibactam.acpype/avibactam_GMX.gro > /data/alexis/project/KPC_complex/KPC-2alphafold_complex.gro
+cat KCP-2cristallography_processed.gro avibactam_GMX.gro > KPC-2cristallography_complex.gro
+cat KCP-204swissmodel_processed.gro avibactam_GMX.gro > KPC-204swissmodel_complex.gro
+cat KCP-204alphafold_processed.gro avibactam_GMX.gro > KPC-204alphafold_complex.gro
+cat KPC2alphafold_processed.gro avibactam_GMX.gro > /KPC-2alphafold_complex.gro
 ```
 Here I have a file with both avibactam and KPC protein for each condition.
 the problem is that cat kept the nomber of atomes from the protein and did not includ atomes from the avibactam (44)
 I have to correct it proprely 
 ```bash 
 # KPC-2 crystallography :3880 +44 = 3924
-sed -i '2s/.*/  3924/' /data/alexis/project/KPC_complex/KPC-2cristallography_complex.gro
+sed -i '2s/.*/  3924/' KPC-2cristallography_complex.gro
 
 # KPC-2 alphafold : 4380 + 44 = 4424
-sed -i '2s/.*/  4424/' /data/alexis/project/KPC_complex/KPC-2alphafold_complex.gro
+sed -i '2s/.*/  4424/' KPC-2alphafold_complex.gro
 
 # KPC-204 alphafold : 4426 + 44 = 4470
-sed -i '2s/.*/  4470/' /data/alexis/project/KPC_complex/KPC-204alphafold_complex.gro
+sed -i '2s/.*/  4470/' KPC-204alphafold_complex.gro
 
 # KPC-204 swissmodel : 4046 + 44 = 4090
-sed -i '2s/.*/  4090/' /data/alexis/project/KPC_complex/KPC-204swissmodel_complex.gro
+sed -i '2s/.*/  4090/' KPC-204swissmodel_complex.gro
 ```
 Good but it still having a problem here GROMACS looks only the last line and that is the line of the ligan not the protein one
 
@@ -167,10 +180,8 @@ And because of the cat in putting informations in block I also have 2 line more 
 
   there is a way to identifie them
   ```bash
-  for f in *.gro; do
-    echo "=== $f ==="
+  for f in *complex.gro; do
     grep -n "acpype\|avibactam\| 44$\| 44 $" "$f"
-    echo ""
 done
 ```
 
@@ -178,63 +189,6 @@ for each .gro that will give you the line of the information of avibactam and th
 we can remove it manualy or in case that there is a too much number of files just with this commande
 
 ```bash
-for f in *.gro; do
-    sed -i '/avibactam_GMX.gro created by acpype/d; /^ 44$/d' "$f"
-done
-```
-and the final line to remove is the box vector between the proteine and the avibactam because the cat past in block the proteine.gro again 
-i removed it manualy
-
-Ok now I decide to creat the box
-in this box we will add 1nm of marge for each side of the proteine to avoid that the proteine interact with itself
-there is no wall on the box that means that if the proteine touch the boder a part of it will path to the other side and risque to disturb it.
-
-```bash
-gmx editconf -f "$f" \
-             -o "${BASE}_box.gro" \
-             -c -d 1.0 -bt cubic
-```
-
-I notice only one problem that is present from the beggining, the KPC-204alphafold proteine has a XYZ coordinate really elongate on the z axis, that a factor to take and it's means that the folding is probably not optimal.
-
-when I'm looking on the RMSD the higher values are always when KPC-204alphafolds is present, it results will be really criticable at the end
-
-and because the cube is larger for this proteine the time of calculation will be longer
-now I will add the information from the .its files into the .top files
-```bash
-cd /data/alexis/project/grmcomplex
-
-cp /data/alexis/avibactam.acpype/avibactam_GMX.itp .
-cp /data/alexis/avibactam.acpype/posre_avibactam.itp .
-
-for BASE in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
-    sed -i "/^\[ system \]/i ; Ligand topology\n#include \"avibactam_GMX.itp\"\n" ${BASE}.top
-    echo "avibactam              1" >> ${BASE}.top
-done
-```
-/!\ problem identified
-the global charge that my proteines have are different, I did research and there in a post traductional modification on that proteine, the signalpetide is remove, on KPC-2 at the ALA30 and for the KPC-240 at the leucine 25
-I have to cut that part on my pdb to make it closer than the original one
-```bash
-cd /data/alexis/project/KPC204/KCPpdb/
-
-awk '$1=="ATOM" && $6>=30' KCP-2alphaforld.pdb > KCP-2alphafold_mature.pdb
-echo "TER" >> KCP-2alphafold_mature.pdb
-
-awk '$1=="ATOM" && $6>=25' KCP-204alphafold.pdb > KCP-204alphafold_mature.pdb
-echo "TER" >> KCP-204alphafold_mature.pdb
-```
-I will remake mu gmx to have a good .top files
-```bash
-
-gmx pdb2gmx \
-    -f /data/alexis/project/KPC204/KCPpdb/KCP-2alphafold_mature.pdb \
-    -o KPC-2alphafold_protein.gro \
-    -p KPC-2alphafold.top \
-    -i KPC-2alphafold_posre.itp \
-    -ff amber99sb-ildn \
-    -water tip3p \
-    -ignh
 
 gmx pdb2gmx \
     -f /data/alexis/project/KPC204/KCPpdb/KCP-204alphafold_mature.pdb \
