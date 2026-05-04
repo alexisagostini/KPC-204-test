@@ -199,17 +199,29 @@ gmx pdb2gmx \
     -water tip3p \
     -ignh
 ```
-Ok now i will solvate all proteins
+
+### Box creation
+in this box we will add 1nm of marge for each side of the proteine to avoid that the proteine interact with itself
+there is no wall on the box that means that if the proteine touch the boder a part of it will path to the other side and risque to disturb it.
+
+```bash
+gmx editconf -f "$f" \
+             -o "${BASE}_box.gro" \
+             -c -d 1.0 -bt cubic
+```
+
+### Solvation
+
 ```bash
 for P in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
-    echo "=== Solvation $P ==="
     gmx solvate -cp ${P}_complex.gro \
                 -cs spc216.gro \
                 -o ${P}_solv.gro \
-                -p /data/alexis/project/grmcomplex/${P}.top
+                -p ${P}.top
     echo ""
 done
 ```
+### Netralisation
 and neutralise with ions. 
 I start to creat a IONS file (ions.mdp) with nano 
 
