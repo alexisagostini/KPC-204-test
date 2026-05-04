@@ -46,16 +46,12 @@ python -c "from colabfold.download import download_alphafold_params; download_al
 ```
 ### launch the prediction 
 ```bash 
-cat > /data/alexis/project/run_colabfold.sh << 'EOF'
 #!/bin/bash
 #SBATCH --job-name=colabfold_KPC204
 #SBATCH --output=/data/alexis/project/KPC204/logs/colabfold_%j.log
 #SBATCH --error=/data/alexis/project/KPC204/logs/colabfold_%j.err
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
-
-eval "$(micromamba shell hook --shell bash)"
-micromamba activate /data/alexis/envs/colabfold
 
 colabfold_batch \
     /data/alexis/project/KPC204.fasta \
@@ -65,9 +61,6 @@ colabfold_batch \
     --model-type alphafold2_ptm \
     --templates \
     --amber
-EOF
-
-sbatch /data/alexis/project/run_colabfold.sh
 ```
 JAX could not detect GPU if is version is too old, feel free to update it
 
