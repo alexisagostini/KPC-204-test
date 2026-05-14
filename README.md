@@ -79,7 +79,7 @@ conda install -c bioconda tmalign
 ```
 my alphafolded proteins have a signal peptide to remove in order to be closer than the reality
 ```bash
-awk '$1=="ATOM" && $6>=30' KPC-2alphaforld.pdb > KPC-2alphafold_mature.pdb
+awk '$1=="ATOM" && $6>=30' KPC-2alphafold.pdb > KPC-2alphafold_mature.pdb
 echo "TER" >> KPC-2alphafold_mature.pdb
 
 awk '$1=="ATOM" && $6>=25' KPC-204alphafold.pdb > KPC-204alphafold_mature.pdb
