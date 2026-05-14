@@ -430,4 +430,84 @@ for i in 0 1 2 3; do
     gmx mdrun -deffnm ${SYS}_md -ntmpi 1 -ntomp 4 -gpu_id $i -nb gpu -pme gpu &
 done
 wait
+
+### ajouter les code pour la visualisation
+
+## correction
+i notice a problem: avibactam that i have doesn't have the Sulphite!
+I have to download a new one with all the atomes
+```bash
+wget -q "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/9835049/property/MolecularFormula,MolecularWeight/TXT" \
+     -O formula.txt
+cat formula.txt
 ```
+ If the fomula is 
+C  7
+H 11
+N  3
+O  6
+S  1
+```bash
+wget "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/9835049/SDF?record_type=3d" \
+     -O avibactam_correct.sdf
+````
+let's start the ACPYPE again 
+```bash
+/home/alexis/micromamba/envs/colabfold/bin/acpype \
+    -i avibactam_correct.sdf \
+    -c bcc \
+    -n 0 \ # the charge is neutral 
+    -a gaff2 \
+    -o gmx \
+    -b avibactam
+the idea now is to add the avibactam close to the binding site to minimise the temps on non interaction and increase the probability of meeting
+i will use the tool Vina
+```bash
+conda create -n docking -c conda-forge -c bioconda autodock-vina openbabel -y
+```
+Vina will find the best pose for the avibactam and for my protein.
+```bash
+#!/bin/bash
+
+WORKDIR="/data/alexis/project/grmcomplex/docking"
+LIGAND="$WORKDIR/avibactam.pdbqt"
+
+declare -A CX CY CZ SRC
+
+SRC["KPC2_cristallo"]="/data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_chainA_only.pdb"
+CX["KPC2_cristallo"]="55.341" ; CY["KPC2_cristallo"]="-19.743" ; CZ["KPC2_cristallo"]="-5.627"
+
+SRC["KPC2_alphafold"]="/data/alexis/project/KPC2/output/sp_Q9F663_BLKPC_KLEPN_Carbapenem-hydrolyzing_beta-lactamase_KPC-2_OS_Klebsiella_pneumoniae_OX_573_GN_KPC-2_PE_1_SV_2_relaxed_rank_002_alphafold2_ptm_model_2_seed_000.pdb"
+CX["KPC2_alphafold"]="3.619"  ; CY["KPC2_alphafold"]="1.700"   ; CZ["KPC2_alphafold"]="1.125"
+
+SRC["KPC204_alphafold"]="/data/alexis/project/KPC204/output/WXU16489.1_inhibitor-resistant_carbapenem-hydrolyzing_class_A_beta-lactamase_KPC-204__plasmid___Klebsiella_pneumoniae__relaxed_rank_002_alphafold2_ptm_model_2_seed_000.pdb"
+CX["KPC204_alphafold"]="-0.063" ; CY["KPC204_alphafold"]="0.542" ; CZ["KPC204_alphafold"]="-2.944"
+
+SRC["KPC204_swissmodel"]="/data/alexis/project/KPC204/KCPpdb/KCP-204swissmodel.pdb"
+CX["KPC204_swissmodel"]="17.145" ; CY["KPC204_swissmodel"]="12.804" ; CZ["KPC204_swissmodel"]="16.122"
+
+for NAME in KPC2_cristallo KPC2_alphafold KPC204_alphafold KPC204_swissmodel; do
+    DIR="$WORKDIR/$NAME"
+    mkdir -p "$DIR"
+
+    grep "^ATOM" "${SRC[$NAME]}" > "$DIR/receptor.pdb"
+    obabel "$DIR/receptor.pdb" -O "$DIR/receptor.pdbqt" --partialcharge gasteiger -h -xr 2>/dev/null
+
+    vina \
+        --receptor "$DIR/receptor.pdbqt" \
+        --ligand   "$LIGAND" \
+        --out      "$DIR/docked.pdbqt" \
+        --log      "$DIR/vina.log" \
+        --center_x "${CX[$NAME]}" \
+        --center_y "${CY[$NAME]}" \
+        --center_z "${CZ[$NAME]}" \
+        --size_x 25 --size_y 25 --size_z 25 \
+        --exhaustiveness 16 \
+        --num_modes 5
+
+    obabel "$DIR/docked.pdbqt" -O "$DIR/best_pose.pdb" -f 1 -l 1 2>/dev/null
+    echo "✅ $NAME terminé"
+done
+```
+
+
