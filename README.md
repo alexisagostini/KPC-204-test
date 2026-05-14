@@ -13,7 +13,7 @@ I primarly need a fasta of the protein KPC-204
 wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
 ```
 On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
-rename to KCP-204swissmodel.pdb
+rename to KPC-204swissmodel.pdb
 
 ## Alpha fold
 in order to verifie if swiss model made a good folding, I will fold both protein from the scratch.
@@ -67,7 +67,7 @@ colabfold_batch \
 Copy the file and move it with an easier name
 ```bash 
 cp /data/alexis/project/KPC204/output/WXU16489.1_inhibitor-resistant_carbapenem-hydrolyzing_class_A_beta-lactamase_KPC-204__plasmid___Klebsiella_pneumoniae__relaxed_rank_001_alphafold2_ptm_model_4_seed_000.pdb \
-   /data/alexis/project/KPC204/KCPpdb/KPC204alphafold.pdb
+   /data/alexis/project/KPC204/KPCpdb/KPC204alphafold.pdb
 ```
 same for the KPC-2alphafold
 ```bash
@@ -79,11 +79,11 @@ conda install -c bioconda tmalign
 ```
 my alphafolded proteins have a signal peptide to remove in order to be closer than the reality
 ```bash
-awk '$1=="ATOM" && $6>=30' KCP-2alphaforld.pdb > KCP-2alphafold_mature.pdb
-echo "TER" >> KCP-2alphafold_mature.pdb
+awk '$1=="ATOM" && $6>=30' KPC-2alphaforld.pdb > KPC-2alphafold_mature.pdb
+echo "TER" >> KPC-2alphafold_mature.pdb
 
-awk '$1=="ATOM" && $6>=25' KCP-204alphafold.pdb > KCP-204alphafold_mature.pdb
-echo "TER" >> KCP-204alphafold_mature.pdb
+awk '$1=="ATOM" && $6>=25' KPC-204alphafold.pdb > KPC-204alphafold_mature.pdb
+echo "TER" >> KPC-204alphafold_mature.pdb
 ```
 In order to compare the structure of protein i use that code 
 ```bash
@@ -96,11 +96,11 @@ my alphafolded proteins have a signal peptide to remove in order to be closer th
 
 |Protein 1|Protein 2| TM score | RMSD | seq_ID |word|
 |---|---|---|---|---|---|
-|KPC-2cristalo_clean.pdb|KCP-2cristalo.pdb|1.000|0.000|1.000|Identical|
-|KPC-2cristalo_clean.pdb|KCP-2alphafold_mature.pdb|0.88681|0.42|1.000|really similare protein from alphafold seems to be a good model|
-|KPC-204swissmodel.pdb|KCP-204alphafold_mature.pdb|0.89864|1.21|0,978|swiss model looks loke a good model but different from alpha fold|
-|KCP-2alphafold_mature.pdb|KCP-204alphafold_mature.pdb|0.94515|1.14|0.993|The comparaison between both alphafold protein looks good the difference probably comes from the 3 amino acide|
-|KCP-2alphafold_mature.pdb|KCP-204swissmodel.pdb|0.90273|1.10|0.974|The comparaison between both  protein looks good the difference probably comes from the 3 amino acide|
+|KPC-2cristalo_clean.pdb|KPC-2cristalo.pdb|1.000|0.000|1.000|Identical|
+|KPC-2cristalo_clean.pdb|KPC-2alphafold_mature.pdb|0.88681|0.42|1.000|really similare protein from alphafold seems to be a good model|
+|KPC-204swissmodel.pdb|KPC-204alphafold_mature.pdb|0.89864|1.21|0,978|swiss model looks loke a good model but different from alpha fold|
+|KPC-2alphafold_mature.pdb|KPC-204alphafold_mature.pdb|0.94515|1.14|0.993|The comparaison between both alphafold protein looks good the difference probably comes from the 3 amino acide|
+|KPC-2alphafold_mature.pdb|KPC-204swissmodel.pdb|0.90273|1.10|0.974|The comparaison between both  protein looks good the difference probably comes from the 3 amino acide|
 
 All protein seems to have really well folded i just decide to exlude KPC-2cristalo.pdb because I have a similar one but cleanner
 
@@ -149,9 +149,9 @@ exit files avibactam_GMX.itp and avibactam_GMX.gro that will interest me
 
 I need to group poteines and avibactam together to make it works for GROMACS
 ```bash
-cat KCP-2cristallography_processed.gro avibactam_GMX.gro > KPC-2cristallography_complex.gro
-cat KCP-204swissmodel_processed.gro avibactam_GMX.gro > KPC-204swissmodel_complex.gro
-cat KCP-204alphafold_processed.gro avibactam_GMX.gro > KPC-204alphafold_complex.gro
+cat KPC-2cristallography_processed.gro avibactam_GMX.gro > KPC-2cristallography_complex.gro
+cat KPC-204swissmodel_processed.gro avibactam_GMX.gro > KPC-204swissmodel_complex.gro
+cat KPC-204alphafold_processed.gro avibactam_GMX.gro > KPC-204alphafold_complex.gro
 cat KPC2alphafold_processed.gro avibactam_GMX.gro > /KPC-2alphafold_complex.gro
 ```
 Here I have a file with both avibactam and KPC protein for each condition.
@@ -191,7 +191,7 @@ we can remove it manualy or in case that there is a too much number of files jus
 ```bash
 
 gmx pdb2gmx \
-    -f /data/alexis/project/KPC204/KCPpdb/KCP-204alphafold_mature.pdb \
+    -f /data/alexis/project/KPC204/KPCpdb/KPC-204alphafold_mature.pdb \
     -o KPC-204alphafold_protein.gro \
     -p KPC-204alphafold.top \
     -i KPC-204alphafold_posre.itp \
