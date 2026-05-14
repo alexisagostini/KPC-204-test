@@ -10,7 +10,7 @@ mv 2OV5.pdb KPC-2cristalo.pdb
 I don't have cristallography for the KPC-204, i will try to manage with swissmodel in order to have a folding based on the KPC-2 folding and the 3 amino acide include in the KPC-204.
 I primarly need a fasta of the protein KPC-204
 ```bash
-wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=proteiaan&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
+wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
 ```
 On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
 rename to KCP-204swissmodel.pdb
