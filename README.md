@@ -431,8 +431,17 @@ for i in 0 1 2 3; do
 done
 wait
 
-### ajouter les code pour la visualisation
-
+### Visualisation
+```bash
+#Root Mean Square Deviation
+gmx gyrate -s md.tpr -f md_center.xtc -o gyrate.xvg
+#Root Mean Square Fluctuation
+gmx rmsf -s md.tpr -f md_center.xtc -o rmsf.xvg -res
+#Radius of Gyration
+gmx rms -s md.tpr -f md_center.xtc -o rmsd.xvg -tu ns
+#Periodic Boundary Conditions correction
+gmx trjconv -s md.tpr -f md.xtc -o md_center.xtc -center -pbc mol -ur compact
+```
 ## correction
 i notice a problem: avibactam that i have doesn't have the Sulphite!
 I have to download a new one with all the atomes
