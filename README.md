@@ -108,20 +108,20 @@ with the **AMBER99SB-ILDN** force field and **GAFF2** parameters for the ligand.
 - Root cause: unknown — suspected CUDA context conflict or MPI detection hang
 ## CRITICAL NOTES — READ CAREFULLY
 
-### ⚠️ WRONG LIGAND IN OLD RUNS
+### WRONG LIGAND IN OLD RUNS
 All systems WITHOUT _v2 suffix used PubChem CID 25151352 (a fluorochlorinated compound: Cl, 3×F, no S, no O) instead of real avibactam. DO NOT use these for analysis.
 
-### ⚠️ TOPOLOGY FIX REQUIRED
+### TOPOLOGY FIX REQUIRED
 ACPYPE places [ atomtypes ] inside MOL.itp. GROMACS requires it in topol.top immediately after the forcefield include. Fix:
   1. Extract lines 3–18 of MOL.itp (the [ atomtypes ] block)
   2. Inject into topol.top after the forcefield.itp include line
   3. Remove those lines from MOL.itp (keep from [ moleculetype ] onward)
   4. Rename molecule: sed -i 's/avibactam_REAL/MOL/g' MOL.itp
 
-### ⚠️ NON-COVALENT SIMULATION
+### NON-COVALENT SIMULATION
 Avibactam forms a covalent adduct with Ser70 in reality. These are classical non-covalent simulations. The Ser70(OG)–Avibactam(C7) distance reflects pre-covalent binding competence only.
 
-### ⚠️ ATOM NUMBERS PER SYSTEM
+### ATOM NUMBERS PER SYSTEM
 Atom numbers for Ser70 OG and MOL C7 differ between systems. Always extract from frame0.pdb:
   grep " OG  SER A  70" frame0.pdb
   grep " C7  MOL"        frame0.pdb
