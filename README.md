@@ -97,6 +97,19 @@ with the **AMBER99SB-ILDN** force field and **GAFF2** parameters for the ligand.
 ## CURRENT STATUS
 
 ### KPC2_cristallo_v2
+The cristallography is a really good start, we have the exact folding of the protein KPC-2 
+```bash
+wget https://files.rcsb.org/download/2OV5.pdb
+mv 2OV5.pdb KPC2_cristallo_v2.pdb
+```
+## Make a KPC-204 .pdb from swiss model.
+I don't have cristallography for the KPC-204, i will try to manage with swissmodel in order to have a folding based on the KPC-2 folding and the 3 amino acide include in the KPC-204.
+I primarly need a fasta of the protein KPC-204
+```bash
+wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
+```
+On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
+rename to KPC-204swissmodel.pdb
 - Production MD running on GPU 0 (PID 1857373)
 - 100 ns simulation, AMBER99SB-ILDN + GAFF2, TIP3P water, 0.15 M NaCl
 
