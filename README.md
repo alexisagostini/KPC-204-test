@@ -109,7 +109,7 @@ I primarly need a fasta of the protein KPC-204
 wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
 ```
 On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
-rename to KPC-204swissmodel.pdb
+rename to KPC204_swissmodel_v2.pdb
 - Production MD running on GPU 0 (PID 1857373)
 - 100 ns simulation, AMBER99SB-ILDN + GAFF2, TIP3P water, 0.15 M NaCl
 
