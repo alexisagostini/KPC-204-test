@@ -1,0 +1,4 @@
+integrator  = steep
+nsteps      = 0
+emtol       = 1000.0
+pbc         = xyz

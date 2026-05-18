@@ -1,0 +1,54 @@
+; Production MD - 100 ns
+integrator              = md
+nsteps                  = 50000000
+dt                      = 0.002
+
+; Output
+nstxout                 = 0
+nstvout                 = 0
+nstenergy               = 5000
+nstlog                  = 5000
+nstxout-compressed      = 5000
+compressed-x-grps       = System
+
+; Neighbour search
+cutoff-scheme           = Verlet
+nstlist                 = 10
+pbc                     = xyz
+
+; Electrostatics
+coulombtype             = PME
+rcoulomb                = 1.2
+fourierspacing          = 0.16
+
+; VdW
+vdwtype                 = Cut-off
+rvdw                    = 1.2
+DispCorr                = EnerPres
+
+; Temperature
+tcoupl                  = V-rescale
+tc-grps                 = Protein_MOL   Water_and_ions
+tau_t                   = 0.1           0.1
+ref_t                   = 300           300
+
+; Pressure - Parrinello-Rahman (sans POSRES)
+pcoupl                  = Parrinello-Rahman
+pcoupltype              = isotropic
+tau_p                   = 2.0
+ref_p                   = 1.0
+compressibility         = 4.5e-5
+refcoord_scaling        = com
+
+; Constraints
+constraints             = h-bonds
+constraint_algorithm    = LINCS
+lincs_iter              = 1
+lincs_order             = 4
+
+; No velocity generation
+gen_vel                 = no
+
+; COM motion
+comm-mode               = Linear
+nstcomm                 = 100
