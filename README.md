@@ -1,522 +1,294 @@
-# KPC-204-test
+# KPC-204-Final
 
-## download the KPC-2 cristallography
-The cristallography is a really good start, we have the exact folding of the protein KPC-2 
-```bash
-wget https://files.rcsb.org/download/2OV5.pdb
-mv 2OV5.pdb KPC-2cristalo.pdb
-```
-## Make a KPC-204 .pdb from swiss model.
-I don't have cristallography for the KPC-204, i will try to manage with swissmodel in order to have a folding based on the KPC-2 folding and the 3 amino acide include in the KPC-204.
-I primarly need a fasta of the protein KPC-204
-```bash
-wget "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=protein&id=WXU16489.1&rettype=fasta&retmode=text" -O KPC204.fasta
-```
-On the swiss model web site (https://swissmodel.expasy.org/interactive#sequence) works on the 28/04/2026 add the fasta file and download the .pbd
-rename to KPC-204swissmodel.pdb
+KPC β-lactamase + Avibactam — Molecular Dynamics Simulations
+Comparative MD study of KPC-2 (wild-type) and KPC-204 (V204 variant) β-lactamases
+in complex with avibactam, using crystallographic and homology-modeled structures.
 
-## Alpha fold
-in order to verifie if swiss model made a good folding, I will fold both protein from the scratch.
-if the folding of KPC-2 is similare to the cristallography the folding by alphafold will be a good model for KPC-204 otherwise using swissmodel could be the best way.
+📋 Table of Contents
+Project Overview
+Repository Structure
+Dependencies
+Current Status
+Pipeline summary
+Full PIPELINE with commande
+Analysis already done
+Immediate priorities
+Project Overview
+This project investigates the binding dynamics of avibactam (a non-β-lactam β-lactamase inhibitor)
+within the active site of two KPC variants:
 
-### downloading micromamba
-This micro-environment is a good way to download alpha fold 
-```bash 
-micromamba create -n colabfold python=3.10 -c conda-forge -y
-micromamba activate colabfold
-```
-and download some tools usefull
-```bash 
-micromamba install -c bioconda hhsuite -y
-pip install pdbfixer
-```
-### Downloading ColabFold
-AlphaFold is thinked for thousand protein and the programme is really heavy and complex, ColabFold is lighter and faster especially if we work on little known protein like i do
-```bash
-pip install \
-    "colabfold[alphafold-minus-jax] @ git+https://github.com/sokrypton/ColabFold"
+Protein	Structure Source	Ligand
+KPC-2	X-ray crystallography	Avibactam (CID 9835049)
+KPC-204 (V204 variant)	SwissModel homology model	Avibactam (CID 9835049)
+Each system underwent 100 ns of classical MD simulation using GROMACS 2025.4
+with the AMBER99SB-ILDN force field and GAFF2 parameters for the ligand.
 
-pip install "jax[cuda12_pip]" \
-    -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-```
-JAX could not detect GPU if is version is too old, feel free to update it
-I also need to install the weights of the AlphaFold2 neural network.
-```python
-#python
-python -c "from colabfold.download import download_alphafold_params; download_alphafold_params('/data/alexis/colabfold_params')"
-```
-### launch the prediction 
-```bash 
-#!/bin/bash
-#SBATCH --job-name=colabfold_KPC204
-#SBATCH --output=/data/alexis/project/KPC204/logs/colabfold_%j.log
-#SBATCH --error=/data/alexis/project/KPC204/logs/colabfold_%j.err
-#SBATCH --mem=32G
-#SBATCH --gres=gpu:1
+Repository Structure
+├── docking/
+│   ├── avibactam_REAL.pdbqt          # Correct avibactam ligand (CID 9835049)
+│   ├── KPC2_cristallo/
+│   │   ├── KPC2_cristallo_receptor.pdbqt
+│   │   ├── KPC2_cristallo_docked.pdbqt
+│   │   ├── KPC2_cristallo_best_pose.pdb
+│   │   └── vina_config.txt
+│   └── KPC204_swissmodel/
+│       ├── KPC204_swissmodel_receptor.pdbqt
+│       ├── KPC204_swissmodel_docked.pdbqt
+│       ├── KPC204_swissmodel_best_pose.pdb
+│       └── vina_config.txt
+│
+├── ligand/
+│   └── avibactam_REAL.acpype/
+│       ├── avibactam_REAL_GMX.itp    # GAFF2 topology
+│       ├── avibactam_REAL_GMX.gro    # Ligand coordinates
+│       └── posre_avibactam_REAL.itp  # Position restraints
+│
+├── mdp/
+│   ├── ions.mdp                      # Minimal MDP for genion
+│   ├── em.mdp                        # Energy minimization
+│   ├── nvt.mdp                       # NVT equilibration (300K, 100 ps)
+│   ├── npt.mdp                       # NPT equilibration (1 bar, 100 ps)
+│   └── md.mdp                        # Production MD (100 ns)
+│
+├── systems/
+│   ├── KPC2_cristallo_v2/            # ← ACTIVE (correct ligand)
+│   │   ├── protein_clean.pdb
+│   │   ├── MOL.itp
+│   │   ├── topol.top
+│   │   ├── complex_ions.gro
+│   │   ├── em.gro / nvt.gro / npt.gro
+│   │   └── md.xtc / md.tpr
+│   └── KPC204_swissmodel_v2/         # ← ACTIVE (correct ligand)
+│       ├── protein_clean.pdb
+│       ├── MOL.itp
+│       ├── topol.top
+│       └── ...
+│
+└── analysis/
+├── plot_analysis.py              # RMSD / RMSF / Rg plots
+├── rmsd.xvg
+├── rmsf.xvg
+├── gyrate.xvg
+└── dist_ser70_C7.xvg             # Ser70–Avibactam C7 distance
+# help from claude for the format beyong
+Dependencies
+Tool	Version	Purpose
+GROMACS	2025.4	MD engine
+ACPYPE	2023.10.27	GAFF2 ligand parameterization
+AutoDock Vina	1.x	Molecular docking
+Open Babel	3.1.0	Format conversion
+Python	≥ 3.10	Analysis scripts
+matplotlib / numpy	latest	Plotting
+CURRENT STATUS
+KPC2_cristallo_v2
+Production MD running on GPU 0 (PID 1857373)
+100 ns simulation, AMBER99SB-ILDN + GAFF2, TIP3P water, 0.15 M NaCl
+KPC204_swissmodel_v2
+Energy minimization (EM) blocked — gmx mdrun hangs silently after printing the GROMACS header, produces no em.log
+em.tpr is valid (confirmed via gmx dump: steep integrator, 10000 steps, emtol=100)
+No file locks, no backup conflicts
+Tested: GPU and CPU-only modes both hang at the same point
+Root cause: unknown — suspected CUDA context conflict or MPI detection hang
+CRITICAL NOTES — READ CAREFULLY
+⚠️ WRONG LIGAND IN OLD RUNS
+All systems WITHOUT _v2 suffix used PubChem CID 25151352 (a fluorochlorinated compound: Cl, 3×F, no S, no O) instead of real avibactam. DO NOT use these for analysis.
 
-colabfold_batch \
-    /data/alexis/project/KPC204.fasta \
-    /data/alexis/project/KPC204/output \
-    --data /data/alexis/colabfold_params \
-    --num-recycle 3 \
-    --model-type alphafold2_ptm \
-    --templates \
-    --amber
-```
+⚠️ TOPOLOGY FIX REQUIRED
+ACPYPE places [ atomtypes ] inside MOL.itp. GROMACS requires it in topol.top immediately after the forcefield include. Fix:
 
-Copy the file and move it with an easier name
-```bash 
-cp /data/alexis/project/KPC204/output/WXU16489.1_inhibitor-resistant_carbapenem-hydrolyzing_class_A_beta-lactamase_KPC-204__plasmid___Klebsiella_pneumoniae__relaxed_rank_001_alphafold2_ptm_model_4_seed_000.pdb \
-   /data/alexis/project/KPC204/KPCpdb/KPC204alphafold.pdb
-```
-same for the KPC-2alphafold
-```bash
-wget -O KPC-2.fasta "https://rest.uniprot.org/uniprotkb/Q9F663.fasta"
-```
-I need a comparaison point to validate my KPC proteines's fold to compare, tmalign is a good tool to compare each other
-```bash
-conda install -c bioconda tmalign
-```
-my alphafolded proteins have a signal peptide to remove in order to be closer than the reality
-```bash
-awk '$1=="ATOM" && $6>=30' KPC-2alphafold.pdb > KPC-2alphafold_mature.pdb
-echo "TER" >> KPC-2alphafold_mature.pdb
+Extract lines 3–18 of MOL.itp (the [ atomtypes ] block)
+Inject into topol.top after the forcefield.itp include line
+Remove those lines from MOL.itp (keep from [ moleculetype ] onward)
+Rename molecule: sed -i 's/avibactam_REAL/MOL/g' MOL.itp
+⚠️ NON-COVALENT SIMULATION
+Avibactam forms a covalent adduct with Ser70 in reality. These are classical non-covalent simulations. The Ser70(OG)–Avibactam(C7) distance reflects pre-covalent binding competence only.
 
-awk '$1=="ATOM" && $6>=25' KPC-204alphafold.pdb > KPC-204alphafold_mature.pdb
-echo "TER" >> KPC-204alphafold_mature.pdb
-```
-In order to compare the structure of protein i use that code 
-```bash
-#Use your own name
-TMalign Prot1.pdb Prot2.pdb
-```
-I have several parameters, I accept a mean deviation of 2 amstrong (RMSD=2) equivalent at a covalent bind and a normality score of 0,70(TMscore=0,70) (Yang Zhang and Jeffrey Skolnick 2004 found that 0,47 was a good score) and an identity of sequence of 0,9 id_seq= 0,9
+⚠️ ATOM NUMBERS PER SYSTEM
+Atom numbers for Ser70 OG and MOL C7 differ between systems. Always extract from frame0.pdb: grep " OG SER A 70" frame0.pdb grep " C7 MOL" frame0.pdb
 
-my alphafolded proteins have a signal peptide to remove in order to be closer than the reality
+Known values (frame 0): KPC2_cristallo: OG=573, C7=3896 KPC2_alphafold: OG=1046, C7=4396 KPC204_alphafold: OG=1046, C7=4442 KPC204_swissmodel: OG=666, C7=4063
 
-|Protein 1|Protein 2| TM score | RMSD | seq_ID |word|
-|---|---|---|---|---|---|
-|KPC-2cristalo_clean.pdb|KPC-2cristalo.pdb|1.000|0.000|1.000|Identical|
-|KPC-2cristalo_clean.pdb|KPC-2alphafold_mature.pdb|0.88681|0.42|1.000|really similare protein from alphafold seems to be a good model|
-|KPC-204swissmodel.pdb|KPC-204alphafold_mature.pdb|0.89864|1.21|0,978|swiss model looks loke a good model but different from alpha fold|
-|KPC-2alphafold_mature.pdb|KPC-204alphafold_mature.pdb|0.94515|1.14|0.993|The comparaison between both alphafold protein looks good the difference probably comes from the 3 amino acide|
-|KPC-2alphafold_mature.pdb|KPC-204swissmodel.pdb|0.90273|1.10|0.974|The comparaison between both  protein looks good the difference probably comes from the 3 amino acide|
+PIPELINE SUMMARY
+Step 1 — Ligand: acpype -i avibactam_REAL.sdf -c bcc -a gaff2 -o gmx -n 0 Step 2 — Docking: AutoDock Vina with existing receptor.pdbqt files Step 3 — Protein topology: gmx pdb2gmx -ff amber99sb-ildn -water spce -ignh Step 4 — Complex: merge protein.gro + MOL.gro, update atom count in line 2 Step 5 — Solvation: gmx editconf (dodecahedron, 1.2 nm) → gmx solvate Step 6 — Ions: gmx grompp + gmx genion (-neutral -conc 0.15) Step 7 — EM: gmx grompp + gmx mdrun -ntmpi 1 -ntomp 8 -gpu_id X -nb gpu Step 8 — NVT: 300K, 100 ps, position restraints Step 9 — NPT: 1 bar, 100 ps, position restraints Step 10 — MD: 100 ns production
 
-All protein seems to have really well folded i just decide to exlude KPC-2cristalo.pdb because I have a similar one but cleanner
-
-## GROMACS
-
-### GROMACS pre-riquire
-
-from my .pbd files I will produce a file of coordinate ready for GROMACS
-
-```bash
-gmx pdb2gmx -f Protein.pdb -o Protein_processed.gro \
--water tip3p -ff amber99sb-ildn
-```
-
-pdb2gmx is a tool from GROMACS that will read the file.pdb add hydrogenes if there are missing, generate the topology (angles, bind, charges) and a forcefield for configure each atomes, creat a file.gro
-
-/!\ my cristalo folding has 2 problems : 
-- there is 3 copies of the protein
-- there is the ligan inside
-
-### ligan clean
-
-I can remove easilly the ligan with grep
-```bash
-grep -v "BCN" KPC-2cristalo_clean.pdb  > KPC-2cristalo_noligand.pdb
-```
-and I probably keep only one copy (there are completly indentical each other)
-
-```bash
-grep -E "^(ATOM|TER)" KPC-2cristalo_noligand.pdb | awk '$5 == "A"'  > KPC-2cristalo_chainA_only.pdb
-```
-Next i do the pdb2gmx tool again with the KPC-2cristalo_chainA_only.pdb
-
-I need to introduce the avibactam for the simulation but GROMACS is adapted to protein but not on avibactam, ACPYPE is a molecular tool that translate a molecule to a language that GROMACS understand
-### introduction of avibactam
-
-```bash
-micromamba install -c conda-forge acpype -y
-wget "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/25151352/record/SDF/?record_type=3d&response_type=save&response_basename=avibactam" -O avibactam.sdf
-acpype -i avibactam.sdf -c bcc -n 0
-```
--n0 because the active forme of avibactame is a sulfate zwitterionique, the charge is 0
-exit files avibactam_GMX.itp and avibactam_GMX.gro that will interest me 
-
-### group proteine and avibactam
-
-I need to group poteines and avibactam together to make it works for GROMACS
-```bash
-cat KPC-2cristallography_processed.gro avibactam_GMX.gro > KPC-2cristallography_complex.gro
-cat KPC-204swissmodel_processed.gro avibactam_GMX.gro > KPC-204swissmodel_complex.gro
-cat KPC-204alphafold_processed.gro avibactam_GMX.gro > KPC-204alphafold_complex.gro
-cat KPC2alphafold_processed.gro avibactam_GMX.gro > /KPC-2alphafold_complex.gro
-```
-Here I have a file with both avibactam and KPC protein for each condition.
-the problem is that cat kept the nomber of atomes from the protein and did not includ atomes from the avibactam (44)
-I have to correct it proprely 
-```bash 
-# KPC-2 crystallography :3880 +44 = 3924
-sed -i '2s/.*/  3924/' KPC-2cristallography_complex.gro
-
-# KPC-2 alphafold : 4380 + 44 = 4424
-sed -i '2s/.*/  4424/' KPC-2alphafold_complex.gro
-
-# KPC-204 alphafold : 4426 + 44 = 4470
-sed -i '2s/.*/  4470/' KPC-204alphafold_complex.gro
-
-# KPC-204 swissmodel : 4046 + 44 = 4090
-sed -i '2s/.*/  4090/' KPC-204swissmodel_complex.gro
-```
-Good but it still having a problem here GROMACS looks only the last line and that is the line of the ligan not the protein one
-
-Just need to copy the last line of the proteine coordinate and past it instead of the avibactam one
-
-And because of the cat in putting informations in block I also have 2 line more that I have to remove 
-- the informations of the avibactam
-- the number of atomes of the avibactamt
-
-  there is a way to identifie them
-  ```bash
-  for f in *complex.gro; do
-    grep -n "acpype\|avibactam\| 44$\| 44 $" "$f"
-done
-```
-
-for each .gro that will give you the line of the information of avibactam and the line where there is the number of atomes of avibactam
-we can remove it manualy or in case that there is a too much number of files just with this commande
-
-```bash
-
-gmx pdb2gmx \
-    -f /data/alexis/project/KPC204/KPCpdb/KPC-204alphafold_mature.pdb \
-    -o KPC-204alphafold_protein.gro \
-    -p KPC-204alphafold.top \
-    -i KPC-204alphafold_posre.itp \
-    -ff amber99sb-ildn \
-    -water tip3p \
-    -ignh
-```
-
-### Box creation
-in this box we will add 1nm of marge for each side of the proteine to avoid that the proteine interact with itself
-there is no wall on the box that means that if the proteine touch the boder a part of it will path to the other side and risque to disturb it.
-
-```bash
-gmx editconf -f "$f" \
-             -o "${BASE}_box.gro" \
-             -c -d 1.0 -bt cubic
-```
-
-### Solvation
-
-```bash
-for P in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
-    gmx solvate -cp ${P}_complex.gro \
-                -cs spc216.gro \
-                -o ${P}_solv.gro \
-                -p ${P}.top
-    echo ""
-done
-```
-### Netralisation
-and neutralise with ions. 
-I start to creat a IONS file (ions.mdp) with nano 
-
-```bash
-nano ions.mdp
-```
-And i put this on the file
-```markdown
-integrator  = steep
-nsteps      = 0
-emtol       = 1000.0
-emstep      = 0.01
-nstlist     = 1
-cutoff-scheme = Verlet
-ns_type     = grid
-coulombtype = cutoff
-rcoulomb    = 1.0
-rvdw        = 1.0
-pbc         = xyz
-```
-now i have to replace all the water molecule by ions 
-Echo13 will automaticaly selection the option sol to doing this 
-
-```bash
-for P in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
-    gmx grompp -f ions.mdp -c ${P}_solv.gro -p /data/alexis/project/grmcomplex/${P}.top -o ${P}_ions.tpr -maxwarn 2
-    echo 13 | gmx genion -s ${P}_ions.tpr -o ${P}_ion.gro -p /data/alexis/project/grmcomplex/${P}.top -pname NA -nname CL -neutral
-done
-```
-I minimise the energie of the system 
-```bash
-nano
-```
-with a file me.mdp (minimisation energie)
-```markdown
-integrator      = steep
-emtol           = 1000.0
-emstep          = 0.01
-nsteps          = 50000
-
-nstlist         = 1
-cutoff-scheme   = Verlet
-ns_type         = grid
-coulombtype     = PME
-rcoulomb        = 1.0
-rvdw            = 1.0
-pbc             = xyz
-```
-and i start the program:
-```bash
-for SYS in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
-    gmx grompp -f em.mdp -c ${SYS}_ion.gro \
-        -p /data/alexis/project/grmcomplex/${SYS}.top \
-        -o ${SYS}_em.tpr -maxwarn 2
-    gmx mdrun -v -deffnm ${SYS}_em -ntmpi 1 -ntomp 4
-done
-```
-I also add a nvt and npt (atomes volume/pression temperature)
-```bash
-nano npt.mdp
-nano nvt.mdp
-```
-for the nvt
-```markdown
-integrator      = md
-nsteps          = 50000        ; 100 ps
-dt              = 0.002
-nstxout         = 500
-nstvout         = 500
-nstenergy       = 500
-nstlog          = 500
-continuation    = no
-constraint_algorithm = lincs
-constraints     = h-bonds
-lincs_iter      = 1
-lincs_order     = 4
-cutoff-scheme   = Verlet
-ns_type         = grid
-nstlist         = 10
-rcoulomb        = 1.0
-rvdw            = 1.0
-coulombtype     = PME
-pme_order       = 4
-fourierspacing  = 0.16
-tcoupl          = V-rescale
-tc-grps         = Protein Non-Protein
-tau_t           = 0.1   0.1
-ref_t           = 300   300
-pcoupl          = no
-pbc             = xyz
-gen_vel         = yes
-gen_temp        = 300
-gen_seed        = -1
-```
-for the npt 
-```
-integrator      = md
-nsteps          = 50000
-dt              = 0.002
-nstxout         = 500
-nstvout         = 500
-nstenergy       = 500
-nstlog          = 500
-continuation    = yes
-constraint_algorithm = lincs
-constraints     = h-bonds
-lincs_iter      = 1
-lincs_order     = 4
-cutoff-scheme   = Verlet
-ns_type         = grid
-nstlist         = 10
-rcoulomb        = 1.0
-rvdw            = 1.0
-coulombtype     = PME
-pme_order       = 4
-fourierspacing  = 0.16
-tcoupl          = V-rescale
-tc-grps         = Protein Non-Protein
-tau_t           = 0.1 0.1
-ref_t           = 300 300
-pcoupl          = Parrinello-Rahman
-pcoupltype      = isotropic
-tau_p           = 2.0
-ref_p           = 1.0
-compressibility = 4.5e-5
-refcoord_scaling = com
-pbc             = xyz
-DispCorr        = EnerPres
-gen_vel         = no
-```
-
-and add the parametter one by one 
-
-NVT
-```bash
-for SYS in KPC-2cristallography KPC-2alphafold KPC-204alphafold KPC-204swissmodel; do
-    gmx grompp -f nvt.mdp -c ${SYS}_em.gro \
-        -r ${SYS}_em.gro \
-        -p /data/alexis/project/grmcomplex/${SYS}.top \
-        -o ${SYS}_nvt.tpr -maxwarn 2
-    gmx mdrun -v -deffnm ${SYS}_nvt -ntmpi 1 -ntomp 4
-done
-```
-NPT
-that time i will do it in parallele in the GPU that will be faster 
-I just need to install gromacs that allow to pass by GPU
-```bash
-conda create -n gmx_gpu -c conda-forge gromacs=2025.4=nompi_cuda_h39c90b0_0 -y
-```
-
-```bash
+Full PIPELINE with commande
+STEP 0 — Environment setup
 conda activate gmx_gpu
-SYSTEMS=("KPC-2cristallography" "KPC-2alphafold" "KPC-204alphafold" "KPC-204swissmodel")
 
-for i in 0 1 2 3; do
-    SYS=${SYSTEMS[$i]}
-    gmx grompp -f npt.mdp -c ${SYS}_nvt.gro -r ${SYS}_nvt.gro \
-        -t ${SYS}_nvt.cpt -p ${SYS}.top -o ${SYS}_npt.tpr -maxwarn 2
-    gmx mdrun -v -deffnm ${SYS}_npt -ntmpi 1 -ntomp 4 -gpu_id $i -nb gpu -pme gpu &
-done
-wait
-```
-Modelisation
-```bash
-nano md.mdp
-```
-```markdown
-integrator      = md
-nsteps          = 50000000
-dt              = 0.002
-nstxout-compressed = 5000
-nstvout         = 0
-nstenergy       = 5000
-nstlog          = 5000
-continuation    = yes
-constraint_algorithm = lincs
-constraints     = h-bonds
-lincs_iter      = 1
-lincs_order     = 4
-cutoff-scheme   = Verlet
-nstlist         = 10
-rcoulomb        = 1.0
-rvdw            = 1.0
-coulombtype     = PME
-pme_order       = 4
-fourierspacing  = 0.16
-tcoupl          = V-rescale
-tc-grps         = Protein Non-Protein
-tau_t           = 0.1 0.1
-ref_t           = 300 300
-pcoupl          = Parrinello-Rahman
-pcoupltype      = isotropic
-tau_p           = 2.0
-ref_p           = 1.0
-compressibility = 4.5e-5
-pbc             = xyz
-DispCorr        = EnerPres
-gen_vel         = no
-```
-execution
-```bash
-for i in 0 1 2 3; do
-    SYS=${SYSTEMS[$i]}
-    gmx grompp -f md.mdp -c ${SYS}_npt.gro -t ${SYS}_npt.cpt \
-        -p ${TOPDIR}/${SYS}.top -o ${SYS}_md.tpr -maxwarn 2 && \
-    gmx mdrun -deffnm ${SYS}_md -ntmpi 1 -ntomp 4 -gpu_id $i -nb gpu -pme gpu &
-done
-wait
+ROOT=/data/alexis/project/grmcomplex
+BASE=$ROOT/systems
+MDP=$ROOT/mdp
+LIG=$ROOT/ligand/avibactam_REAL.acpype
+DOCK=$ROOT/docking
+STEP 1 — Ligand preparation (ACPYPE)
+cd $ROOT/ligand
 
-### Visualisation
-```bash
-#Root Mean Square Deviation
-gmx gyrate -s md.tpr -f md_center.xtc -o gyrate.xvg
-#Root Mean Square Fluctuation
-gmx rmsf -s md.tpr -f md_center.xtc -o rmsf.xvg -res
-#Radius of Gyration
-gmx rms -s md.tpr -f md_center.xtc -o rmsd.xvg -tu ns
-#Periodic Boundary Conditions correction
-gmx trjconv -s md.tpr -f md.xtc -o md_center.xtc -center -pbc mol -ur compact
-```
-## correction
-i notice a problem: avibactam that i have doesn't have the Sulphite!
-I have to download a new one with all the atomes
-```bash
-wget -q "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/9835049/property/MolecularFormula,MolecularWeight/TXT" \
-     -O formula.txt
-cat formula.txt
-```
- If the fomula is 
-C  7
-H 11
-N  3
-O  6
-S  1
-```bash
+Download correct avibactam (CID 9835049)
 wget "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/9835049/SDF?record_type=3d" \
-     -O avibactam_correct.sdf
-````
-let's start the ACPYPE again 
-```bash
-/home/alexis/micromamba/envs/colabfold/bin/acpype \
-    -i avibactam_correct.sdf \
-    -c bcc \
-    -n 0 \ # the charge is neutral 
-    -a gaff2 \
-    -o gmx \
-    -b avibactam
-the idea now is to add the avibactam close to the binding site to minimise the temps on non interaction and increase the probability of meeting
-i will use the tool Vina
-```bash
-conda create -n docking -c conda-forge -c bioconda autodock-vina openbabel -y
-```
-Vina will find the best pose for the avibactam and for my protein.
-```bash
-#!/bin/bash
+     -O avibactam_REAL.sdf
+Verify: must have S and O, no Cl or F ( moluecule used for the crystallography )
+grep " S " avibactam_REAL.sdf   # must return 1 line
+grep " F " avibactam_REAL.sdf   # must return nothing
+grep " Cl" avibactam_REAL.sdf   # must return nothing
+Generate GAFF2 topology (Litlle organic molecule like avibactam)
+acpype -i avibactam_REAL.sdf -c bcc -a gaff2 -o gmx -n 0
 
-WORKDIR="/data/alexis/project/grmcomplex/docking"
-LIGAND="$WORKDIR/avibactam.pdbqt"
+# Rename molecule to MOL (required for GROMACS compatibility)
+sed -i 's/avibactam_REAL/MOL/g' $LIG/avibactam_REAL_GMX.itp
+Expected output in $LIG/: avibactam_REAL_GMX.itp → GAFF2 topology (28 atoms: S,O×6,N×3,C×7,H×11) avibactam_REAL_GMX.gro → ligand coordinates posre_avibactam_REAL.itp
 
-declare -A CX CY CZ SRC
+STEP 2 — Molecular docking (AutoDock Vina)
+cd $DOCK
+obabel $ROOT/ligand/avibactam_REAL.sdf -O avibactam_REAL.pdbqt \
+       --partialcharge gasteiger -h
+sed -i "s|avibactam.pdbqt|avibactam_REAL.pdbqt|g" \
+    KPC2_cristallo/vina_config.txt KPC204_swissmodel/vina_config.txt
+vina --config KPC2_cristallo/vina_config.txt
+vina --config KPC204_swissmodel/vina_config.txt
 
-SRC["KPC2_cristallo"]="/data/alexis/project/KPC204/KCPpdb/KPC-2cristalo_chainA_only.pdb"
-CX["KPC2_cristallo"]="55.341" ; CY["KPC2_cristallo"]="-19.743" ; CZ["KPC2_cristallo"]="-5.627"
-
-SRC["KPC2_alphafold"]="/data/alexis/project/KPC2/output/sp_Q9F663_BLKPC_KLEPN_Carbapenem-hydrolyzing_beta-lactamase_KPC-2_OS_Klebsiella_pneumoniae_OX_573_GN_KPC-2_PE_1_SV_2_relaxed_rank_002_alphafold2_ptm_model_2_seed_000.pdb"
-CX["KPC2_alphafold"]="3.619"  ; CY["KPC2_alphafold"]="1.700"   ; CZ["KPC2_alphafold"]="1.125"
-
-SRC["KPC204_alphafold"]="/data/alexis/project/KPC204/output/WXU16489.1_inhibitor-resistant_carbapenem-hydrolyzing_class_A_beta-lactamase_KPC-204__plasmid___Klebsiella_pneumoniae__relaxed_rank_002_alphafold2_ptm_model_2_seed_000.pdb"
-CX["KPC204_alphafold"]="-0.063" ; CY["KPC204_alphafold"]="0.542" ; CZ["KPC204_alphafold"]="-2.944"
-
-SRC["KPC204_swissmodel"]="/data/alexis/project/KPC204/KCPpdb/KCP-204swissmodel.pdb"
-CX["KPC204_swissmodel"]="17.145" ; CY["KPC204_swissmodel"]="12.804" ; CZ["KPC204_swissmodel"]="16.122"
-
-for NAME in KPC2_cristallo KPC2_alphafold KPC204_alphafold KPC204_swissmodel; do
-    DIR="$WORKDIR/$NAME"
-    mkdir -p "$DIR"
-
-    grep "^ATOM" "${SRC[$NAME]}" > "$DIR/receptor.pdb"
-    obabel "$DIR/receptor.pdb" -O "$DIR/receptor.pdbqt" --partialcharge gasteiger -h -xr 2>/dev/null
-
-    vina \
-        --receptor "$DIR/receptor.pdbqt" \
-        --ligand   "$LIGAND" \
-        --out      "$DIR/docked.pdbqt" \
-        --log      "$DIR/vina.log" \
-        --center_x "${CX[$NAME]}" \
-        --center_y "${CY[$NAME]}" \
-        --center_z "${CZ[$NAME]}" \
-        --size_x 25 --size_y 25 --size_z 25 \
-        --exhaustiveness 16 \
-        --num_modes 5
-
-    obabel "$DIR/docked.pdbqt" -O "$DIR/best_pose.pdb" -f 1 -l 1 2>/dev/null
-    echo "✅ $NAME terminé"
+# Extract best pose
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    python3 -c "
+lines = open('${sys}/${sys}_docked.pdbqt').readlines()
+out, in_m = [], False
+for l in lines:
+    if l.strip() == 'MODEL 1': in_m = True
+    if in_m: out.append(l)
+    if in_m and l.startswith('ENDMDL'): break
+open('${sys}/${sys}_best_pose.pdbqt','w').writelines(out)
+"
+    obabel $DOCK/${sys}/${sys}_best_pose.pdbqt \
+           -O $DOCK/${sys}/${sys}_best_pose.pdb 2>/dev/null
 done
-```
+STEP 3 — Create system directories and copy files
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    mkdir -p $BASE/${sys}_v2
+    cp $BASE/${sys}/protein_clean.pdb          $BASE/${sys}_v2/
+    cp $DOCK/${sys}/${sys}_best_pose.pdb       $BASE/${sys}_v2/ligand.pdb
+    cp $LIG/avibactam_REAL_GMX.itp             $BASE/${sys}_v2/MOL.itp
+    cp $LIG/avibactam_REAL_GMX.gro             $BASE/${sys}_v2/MOL.gro
+    cp $LIG/posre_avibactam_REAL.itp           $BASE/${sys}_v2/posre_MOL.itp
+    sed -i 's/avibactam_REAL/MOL/g'            $BASE/${sys}_v2/MOL.itp
+    echo "Ready: ${sys}_v2"
+done
+STEP 4 — Protein topology (pdb2gmx)
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx pdb2gmx -f protein_clean.pdb -o protein.gro -p topol.top \
+                -water spce -ff amber99sb-ildn -ignh
+done
+STEP 5 — Build complex GRO (protein + ligand)
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    NATOM_PROT=$(sed -n '2p' protein.gro | tr -d ' ')
+    NATOM_LIG=$(sed -n '2p' MOL.gro | tr -d ' ')
+    NATOM_TOTAL=$((NATOM_PROT + NATOM_LIG))
+    head -1 protein.gro > complex.gro
+    echo " $NATOM_TOTAL" >> complex.gro
+    sed -n '3,$p' protein.gro | head -n $NATOM_PROT >> complex.gro
+    sed -n '3,$p' MOL.gro     | head -n $NATOM_LIG  >> complex.gro
+    tail -1 protein.gro >> complex.gro
+done
+STEP 6 — Fix topol.top (CRITICAL — atomtypes placement)
+ACPYPE puts [ atomtypes ] inside MOL.itp — GROMACS needs it in topol.top. This step moves it to the right place.
+
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    cp MOL.itp MOL.itp.bak && cp topol.top topol.top.bak
+
+    MOLTYPE_LINE=$(grep -n "^\[ moleculetype \]" MOL.itp | head -1 | cut -d: -f1)
+    sed -n "3,$((MOLTYPE_LINE - 1))p" MOL.itp > atomtypes_block.tmp
+    sed -n "${MOLTYPE_LINE},\$p" MOL.itp > MOL_clean.itp && mv MOL_clean.itp MOL.itp
+
+    FFLINE=$(grep -n "forcefield.itp" topol.top | head -1 | cut -d: -f1)
+    sed -i "${FFLINE}r atomtypes_block.tmp" topol.top
+
+    SYSLINE=$(grep -n "^\[ system \]" topol.top | head -1 | cut -d: -f1)
+    sed -i "$((SYSLINE - 1))a #include \"MOL.itp\"\n#include \"posre_MOL.itp\"" topol.top
+    echo "MOL                  1" >> topol.top
+done
+STEP 7 — Solvate
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx editconf -f complex.gro -o complex_box.gro -c -d 1.2 -bt dodecahedron
+    gmx solvate  -cp complex_box.gro -cs spc216.gro -o complex_solv.gro -p topol.top
+done
+STEP 8 — Add ions
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx grompp -f $MDP/ions.mdp -c complex_solv.gro -r complex_solv.gro \
+               -p topol.top -o ions.tpr -maxwarn 2
+    echo "SOL" | gmx genion -s ions.tpr -o complex_ions.gro \
+                 -p topol.top -pname NA -nname CL -neutral -conc 0.15
+done
+STEP 9 — Energy minimization
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx grompp -f $MDP/em.mdp -c complex_ions.gro -r complex_ions.gro \
+               -p topol.top -o em.tpr -maxwarn 2
+    gmx mdrun -v -deffnm em -ntmpi 1 -ntomp 8 -gpu_id 1 -nb gpu
+done
+If it hangs → use CPU instead: gmx mdrun -v -deffnm em -ntmpi 1 -ntomp 8 -nb cpu -pme cpu -bonded cpu
+
+STEP 10 — NVT (300 K, 100 ps)
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx grompp -f $MDP/nvt.mdp -c em.gro -r em.gro \
+               -p topol.top -o nvt.tpr -maxwarn 2
+    gmx mdrun -v -deffnm nvt -ntmpi 1 -ntomp 8 -gpu_id 1
+done
+STEP 11 — NPT (1 bar, 100 ps)
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx grompp -f $MDP/npt.mdp -c nvt.gro -r nvt.gro -t nvt.cpt \
+               -p topol.top -o npt.tpr -maxwarn 2
+    gmx mdrun -v -deffnm npt -ntmpi 1 -ntomp 8 -gpu_id 1
+done
+STEP 12 — Production MD (100 ns)
+screen -S md_v2   # detach with Ctrl+A then D — NEVER Ctrl+Z that made me pass lot of time to understand what happen ! 
+
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+    gmx grompp -f $MDP/md.mdp -c npt.gro -t npt.cpt \
+               -p topol.top -o md.tpr -maxwarn 2
+    gmx mdrun -v -deffnm md -ntmpi 1 -ntomp 8 -gpu_id 1 \
+              -nb gpu -pme gpu -bonded gpu
+done
+STEP 13 — Analysis (after MD) with a big claude help to fix the code!
+for sys in KPC2_cristallo KPC204_swissmodel; do
+    cd $BASE/${sys}_v2
+
+    # Recenter trajectory
+    echo "Protein System" | gmx trjconv -s md.tpr -f md.xtc \
+        -o md_center.xtc -center -pbc mol -ur compact
+
+    # RMSD
+    echo "Backbone Backbone" | gmx rms -s md.tpr -f md_center.xtc \
+        -o rmsd.xvg -tu ns
+
+    # RMSF
+    echo "Backbone" | gmx rmsf -s md.tpr -f md_center.xtc \
+        -o rmsf.xvg -res
+
+    # Ser70–Avibactam C7 distance
+    echo "System" | gmx trjconv -s md.tpr -f md_center.xtc \
+        -o frame0.pdb -dump 0 2>/dev/null
+    OG=$(grep " OG  SER A  70" frame0.pdb | awk '{print $2}')
+    C7=$(grep " C7  MOL"        frame0.pdb | awk '{print $2}')
+    printf "[ OG_Ser70 ]\n${OG}\n[ C7_MOL ]\n${C7}\n" > dist_ser70.ndx
+    gmx distance -s md.tpr -f md_center.xtc -n dist_ser70.ndx \
+        -select 'com of group "OG_Ser70" plus com of group "C7_MOL"' \
+        -oall dist_ser70_C7.xvg -tu ns
+done
+ANALYSIS ALREADY DONE (deprecated runs — wrong ligand)
+md_center.xtc generated for all 4 old systems
+RMSD, RMSF, gyrate computed
+Ser70–C7 distances computed: KPC2_cristallo: 1.258 ± 0.423 nm KPC2_alphafold: 1.685 ± 0.254 nm KPC204_alphafold: 2.298 ± 0.484 nm KPC204_swissmodel: 1.088 ± 0.047 nm
+Comparative plots saved in systems/ as PNG files
+IMMEDIATE PRIORITIES
+Fix KPC204_swissmodel_v2 EM blocking issue
+Once both EMs converge: run NVT → NPT → 100 ns MD on both _v2 systems
+Post-MD analysis: RMSD, RMSF, Rg, Ser70–C7 distance, ligand RMSD
+Compare KPC2 vs KPC204 binding stability
 
 
